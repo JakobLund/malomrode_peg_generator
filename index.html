@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SKÅDIS Peg Generator</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/three@0.142.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.142.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.142.0/examples/js/utils/BufferGeometryUtils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/occt-import-js@0.0.23/dist/occt-import-js.min.js"></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="preview card" id="preview" style="padding: 0">
+        <div id="removalTag">REMOVAL MODE</div>
+        <div class="topbar">
+          <div class="pill">3D Preview</div>
+          <div class="status" id="status">Ready.</div>
+        </div>
+
+        <div id="dropHint">
+          <div class="hintBox">
+            <div class="big">Drop .STEP / .STP / .STL here</div>
+            <div class="muted">or click to choose a file</div>
+            <div class="muted">(.STL is experimental and may have issues)</div>
+          </div>
+        </div>
+
+        <div id="overlay">
+          <div class="box">
+            <div class="overlayRow">
+              <div class="spinner"></div>
+              <div>
+                <div style="font-weight: 700">Loading…</div>
+                <div class="muted" id="overlayMsg">Starting</div>
+              </div>
+            </div>
+            <div class="muted" style="margin-top: 10px" id="overlaySub"></div>
+          </div>
+        </div>
+
+        <div id="errorOverlay">
+          <div class="box">
+            <div style="font-weight: 800; color: #ffb4b4">Error</div>
+            <div class="muted" style="margin-top: 6px">
+              Open devtools console for details if needed.
+            </div>
+            <div class="mono" id="errorText" style="margin-top: 10px"></div>
+            <div style="margin-top: 12px">
+              <button class="tinybtn" id="closeError">Close</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="canvasHost"></div>
+      </div>
+
+      <aside class="panel">
+        <div class="card">
+          <div class="label">Input</div>
+          <div class="file-input-group" id="fileInputGroup">
+            <div class="file-input-label" id="fileNameLabel">
+              Select Object File (.STEP/.STL)...
+            </div>
+            <div class="file-input-btn">Browse</div>
+            <input id="objectFile" type="file" accept=".step,.stp,.stl" />
+          </div>
+
+          <div style="height: 10px"></div>
+          <div class="krow">
+            <button class="tinybtn" id="clearFaces" disabled>
+              Clear faces
+            </button>
+            <button class="tinybtn" id="fitView" disabled>Fit view</button>
+          </div>
+
+          <div style="height: 10px"></div>
+          <div class="row" style="justify-content: space-between; flex-wrap: wrap">
+            <div class="pill" id="facesPill">0 planar / 0 selected</div>
+            <div class="pill" id="pegsPill">0 pegs</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Peg orientation</div>
+          <div class="axisRow">
+            <div class="axisTag">X</div>
+            <button class="tinybtn" id="xMinus">-90°</button>
+            <button class="tinybtn" id="xPlus">+90°</button>
+            <input
+              id="xRange"
+              type="range"
+              min="-180"
+              max="180"
+              step="1"
+              value="0"
+            />
+            <input
+              id="xNum"
+              class="deg"
+              type="number"
+              min="-180"
+              max="180"
+              step="1"
+              value="0"
+            />
+          </div>
+          <div class="axisRow">
+            <div class="axisTag">Y</div>
+            <button class="tinybtn" id="yMinus">-90°</button>
+            <button class="tinybtn" id="yPlus">+90°</button>
+            <input
+              id="yRange"
+              type="range"
+              min="-180"
+              max="180"
+              step="1"
+              value="0"
+            />
+            <input
+              id="yNum"
+              class="deg"
+              type="number"
+              min="-180"
+              max="180"
+              step="1"
+              value="0"
+            />
+          </div>
+          <div class="axisRow">
+            <div class="axisTag">Z</div>
+            <button class="tinybtn" id="zMinus">-90°</button>
+            <button class="tinybtn" id="zPlus">+90°</button>
+            <input
+              id="zRange"
+              type="range"
+              min="-180"
+              max="180"
+              step="1"
+              value="0"
+            />
+            <input
+              id="zNum"
+              class="deg"
+              type="number"
+              min="-180"
+              max="180"
+              step="1"
+              value="0"
+            />
+          </div>
+          <div style="height: 10px"></div>
+          <div class="krow">
+            <button class="tinybtn" id="resetOri">Reset Rotation</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Peg</div>
+          <div class="pegPicker" id="pegPicker">
+            <button
+              type="button"
+              class="pegOption"
+              data-peg="snug"
+              aria-pressed="false"
+            >
+              <span class="pegIcon" aria-hidden="true">
+                <span class="pegBack"></span>
+                <span class="pegStack">
+                  <span class="pegOuter"></span>
+                  <span class="pegInner"></span>
+                </span>
+              </span>
+              <span class="pegLabel">Snug</span>
+            </button>
+
+            <button
+              type="button"
+              class="pegOption selected"
+              data-peg="normal"
+              aria-pressed="true"
+            >
+              <span class="pegIcon" aria-hidden="true">
+                <span class="pegBack"></span>
+                <span class="pegStack">
+                  <span class="pegOuter"></span>
+                  <span class="pegInner"></span>
+                </span>
+              </span>
+              <span class="pegLabel">Normal</span>
+            </button>
+
+            <button
+              type="button"
+              class="pegOption"
+              data-peg="loose"
+              aria-pressed="false"
+            >
+              <span class="pegIcon" aria-hidden="true">
+                <span class="pegBack"></span>
+                <span class="pegStack">
+                  <span class="pegOuter"></span>
+                  <span class="pegInner"></span>
+                </span>
+              </span>
+              <span class="pegLabel">Loose</span>
+            </button>
+          </div>
+          <div style="height: 10px"></div>
+          <div class="label">Removal</div>
+          <div class="row">
+            <button class="tinybtn dangerbtn" id="toggleRemoval">
+              Peg removal
+            </button>
+            <button class="tinybtn" id="resetRemoval">Reset removed</button>
+          </div>
+          <div class="muted" style="margin-top: 8px">
+            Toggle removal mode to click and remove specific pegs.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Layout</div>
+          <div
+            class="row"
+            style="justify-content: space-between; flex-wrap: wrap"
+          >
+            <div class="pill" id="dimsPill">–</div>
+            <div class="pill" id="countPill">–</div>
+          </div>
+          <div style="height: 10px"></div>
+          <div class="label">Units</div>
+          <select id="unitSelect">
+            <option value="peg" selected>Pegs (count)</option>
+            <option value="mm">Millimeters (mm)</option>
+            <option value="in">Inches (in)</option>
+          </select>
+          <div style="height: 10px"></div>
+
+          <div class="label" id="hLabel">Horizontal span</div>
+          <div class="row">
+            <input id="hNum" type="number" min="1" max="40" step="0.5" value="1" />
+            <input id="hRange" type="range" min="1" max="40" step="0.5" value="1" />
+          </div>
+
+          <div style="height: 10px"></div>
+          <div class="label" id="vLabel">Vertical span</div>
+          <div class="row">
+            <input id="vNum" type="number" min="1" max="40" step="1" value="1" />
+            <input id="vRange" type="range" min="1" max="40" step="1" value="1" />
+          </div>
+
+          <div style="height: 10px"></div>
+
+          <div class="label" id="padLabel">Padding (mm)</div>
+          <div class="row">
+            <input id="padNum" type="number" min="0" max="50" step="0.1" value="5" />
+            <input id="padRange" type="range" min="0" max="50" step="0.1" value="5" />
+          </div>
+
+          <div style="height: 10px"></div>
+          <button class="tinybtn" id="autoLayout">Auto layout from face</button>
+        </div>
+        <div class="card">
+
+          <div class="label">Alignment</div>
+          <select id="row0Offset">
+            <option value="0" selected>Centre peg in 1st row</option>
+            <option value="half">Centre peg in 2nd row</option>
+          </select>
+
+          <div style="height: 16px"></div>
+          <div class="label">Offset</div>
+          <div class="row">
+            <div class="axisTag" style="width: 24px">X</div>
+            <input
+              id="offXRange"
+              type="range"
+              min="-100"
+              max="100"
+              step="1"
+              value="0"
+            />
+            <input id="offXNum" class="deg" type="number" value="0" />
+          </div>
+          <div style="height: 8px"></div>
+          <div class="row">
+            <div class="axisTag" style="width: 24px">Y</div>
+            <input
+              id="offYRange"
+              type="range"
+              min="-100"
+              max="100"
+              step="1"
+              value="0"
+            />
+            <input id="offYNum" class="deg" type="number" value="0" />
+          </div>
+          <div style="height: 10px"></div>
+          <div class="krow">
+            <button class="tinybtn" id="resetOffset">Reset Offset</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Export</div>
+          <div class="row" style="gap: 10px; align-items: center; margin-bottom: 10px">
+            <select id="exportFormat" style="flex: 1">
+              <option value="step">STEP</option>
+              <option value="stl">STL</option>
+            </select>
+          </div>
+          <button id="download" disabled>Download STEP</button>
+        </div>
+      </aside>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
