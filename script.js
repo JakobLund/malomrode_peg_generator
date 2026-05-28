@@ -1,7 +1,7 @@
 // Hello!
 // Yes some of it is vibecoded i dont like js dont judge me
 
-(function(){
+(function() {
   'use strict';
 
   const FIXED_X_DEG = 90;
@@ -91,6 +91,7 @@
   let objectStepParts = null;
   let objectMaxId = 0;
   let objectMmPerUnit = 1;
+  let objectFileName = '';
 
   let pegStepText = '';
   let pegStepParts = null;
@@ -122,27 +123,27 @@
   let hoveredInstanceId = -1; 
   let hoveredIsRemoved = false; 
 
-  function showLoading(msg, sub){
+  function showLoading(msg, sub) {
     overlayMsg.textContent = msg || 'Loading…';
     overlaySub.textContent = sub || '';
     overlay.style.display = 'flex';
   }
-  function hideLoading(){ overlay.style.display = 'none'; }
-  function showError(err){
+  function hideLoading() { overlay.style.display = 'none'; }
+  function showError(err) {
     console.error(err);
     errorText.textContent = String(err && (err.stack || err.message || err) || 'Unknown error');
     errorOverlay.style.display = 'flex';
   }
 
-  function snapTo(value, step){
+  function snapTo(value, step) {
     return Math.floor(value / step + 1e-9) * step;
   }
-  function rowPhase(rowIndex, row0IsHalf){
+  function rowPhase(rowIndex, row0IsHalf) {
     const base = row0IsHalf ? 1 : 0;
     return base ^ (rowIndex & 1);
   }
   
-  function computePegPositions(spanXmm, spanYmm, row0IsHalf){
+  function computePegPositions(spanXmm, spanYmm, row0IsHalf) {
     const sx = snapTo(spanXmm, HALF_X);
     const sy = snapTo(spanYmm, PITCH_Y);
 
@@ -150,10 +151,12 @@
     const stepsY = Math.max(0, Math.round(sy / PITCH_Y));
 
     const raw = [];
-    for (let r = 0; r <= stepsY; r++){
+    
+    for (let r = 0; r <= stepsY; r++) {
       const rp = rowPhase(r, row0IsHalf);
       const y = r * PITCH_Y;
-      for (let i = 0; i <= halfStepsX; i++){
+
+      for (let i = 0; i <= halfStepsX; i++) {
         if ( (i & 1) !== rp ) continue;
         raw.push({ x: i * HALF_X, y });
       }
@@ -164,7 +167,7 @@
     }
 
     let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
-    for (const p of raw){
+    for (const p of raw) {
       minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
       minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
     }
@@ -176,12 +179,12 @@
     return { sx, sy, positions, shift: {x: cx, y: cy} };
   }
 
-  function updateLimits(){
+  function updateLimits() {
     const unit = unitSelect.value;
     hNum.min = 0; hRange.min = 0;
     vNum.min = 0; vRange.min = 0;
 
-    if(unit === 'mm'){
+    if(unit === 'mm') {
       hNum.max = 600; hRange.max = 600; hNum.step = 0.1; hRange.step = 0.1;
       vNum.max = 600; vRange.max = 600; vNum.step = 0.1; vRange.step = 0.1;
       hNum.min = 1; hRange.min = 1;
@@ -211,8 +214,8 @@
     if(Number(hNum.value) < Number(hNum.min)) { hNum.value = hNum.min; hRange.value = hNum.min; }
     if(Number(vNum.value) < Number(vNum.min)) { vNum.value = vNum.min; vRange.value = vNum.min; }
 
-    if (padNum && padRange && padLabel){
-      if (unit === 'in'){
+    if (padNum && padRange && padLabel) {
+      if (unit === 'in') {
         padLabel.textContent = 'Padding (in)';
         padNum.min = 0; padRange.min = 0;
         padNum.max = 2; padRange.max = 2;
@@ -234,7 +237,7 @@
     }
   }
 
-  function getMmValues(){
+  function getMmValues() {
     const unit = unitSelect.value;
     const hVal = Number(hNum.value || 0);
     const vVal = Number(vNum.value || 0);
@@ -249,14 +252,14 @@
     return { x: 0, y: 0 };
   }
 
-  function getPaddingMm(unitOverride){
+  function getPaddingMm(unitOverride) {
     const unit = unitOverride || unitSelect.value;
     const v = Number(padNum && padNum.value || 0);
     if (!isFinite(v) || v < 0) return 0;
     return unit === 'in' ? (v * 25.4) : v;
   }
 
-  function setPaddingUiFromMm(mm){
+  function setPaddingUiFromMm(mm) {
     if (!padNum || !padRange) return;
     const unit = unitSelect.value;
     let ui = unit === 'in' ? (mm / 25.4) : mm;
@@ -273,7 +276,7 @@
     padRange.value = String(ui);
   }
 
-  function effectivePadMmForFace(face, requestedPadMm){
+  function effectivePadMmForFace(face, requestedPadMm) {
     if (!face || !face.bounds) return requestedPadMm;
   
     const isDefaultFive = Math.abs(requestedPadMm - 5) < 0.25;
@@ -287,12 +290,12 @@
     return requestedPadMm;
   }
   
-  function bindSync(numEl, rangeEl, onChange){
+  function bindSync(numEl, rangeEl, onChange) {
     rangeEl.addEventListener('input', () => { numEl.value = rangeEl.value; onChange(); });
     numEl.addEventListener('input', onChange);
   }
 
-  function readFileAsText(file){
+  function readFileAsText(file) {
     return new Promise((resolve, reject) => {
       const r = new FileReader();
       r.onload = () => resolve(String(r.result || ''));
@@ -301,7 +304,7 @@
     });
   }
 
-  function readFileAsArrayBuffer(file, onProgress){
+  function readFileAsArrayBuffer(file, onProgress) {
     return new Promise((resolve, reject) => {
       const r = new FileReader();
       r.onload = () => resolve(r.result);
@@ -311,7 +314,7 @@
     });
   }
 
-  function splitStep(stepText){
+  function splitStep(stepText) {
     const dataIdx = stepText.indexOf('DATA;');
     if (dataIdx < 0) throw new Error('No DATA; section found');
     const endIdx = stepText.lastIndexOf('ENDSEC;');
@@ -322,18 +325,18 @@
     return { header, data, footer };
   }
 
-  function maxEntityId(dataText){
+  function maxEntityId(dataText) {
     let maxId = 0;
     const re = /#(\d+)\s*=/g;
     let m;
-    while ((m = re.exec(dataText)) !== null){
+    while ((m = re.exec(dataText)) !== null) {
       const id = parseInt(m[1], 10);
       if (id > maxId) maxId = id;
     }
     return maxId;
   }
 
-  function detectMmPerUnit(stepText){
+  function detectMmPerUnit(stepText) {
     const t = stepText.toUpperCase();
     if (t.includes("SI_UNIT(.MILLI.,.METRE.)")) return 1;
     if (t.includes("SI_UNIT(.CENTI.,.METRE.)")) return 10;
@@ -344,14 +347,14 @@
     return 1;
   }
 
-  function fmt(n){
+  function fmt(n) {
     let s = Number(n).toFixed(9);
     s = s.replace(/\.?0+$/,'');
     if (s === '-0') s = '0';
     return s;
   }
 
-  function mulR3(R, v){
+  function mulR3(R, v) {
     return [
       R[0][0]*v[0] + R[0][1]*v[1] + R[0][2]*v[2],
       R[1][0]*v[0] + R[1][1]*v[1] + R[1][2]*v[2],
@@ -359,13 +362,13 @@
     ];
   }
 
-  function normalize3(v){
+  function normalize3(v) {
     const l = Math.hypot(v[0], v[1], v[2]);
     if (l < 1e-12) return v;
     return [v[0]/l, v[1]/l, v[2]/l];
   }
 
-  function transformPegDataBlock(dataText, R, tObjUnits, scalePegToObj, idOffset){
+  function transformPegDataBlock(dataText, R, tObjUnits, scalePegToObj, idOffset) {
     const lines = dataText.split(/\r?\n/).filter(l => l.trim().length > 0);
     const cpRe  = /(CARTESIAN_POINT\s*\(\s*'[^']*'\s*,\s*\(\s*)([-\d+.Ee]+)\s*,\s*([-\d+.Ee]+)\s*,\s*([-\d+.Ee]+)(\s*\)\s*\)\s*;)/i;
     const dirRe = /(DIRECTION\s*\(\s*'[^']*'\s*,\s*\(\s*)([-\d+.Ee]+)\s*,\s*([-\d+.Ee]+)\s*,\s*([-\d+.Ee]+)(\s*\)\s*\)\s*;)/i;
@@ -373,7 +376,7 @@
     const outLines = lines.map(line => {
       let s = line;
       let m = s.match(cpRe);
-      if (m){
+      if (m) {
         const pPeg = [parseFloat(m[2]), parseFloat(m[3]), parseFloat(m[4])];
         const pRot = mulR3(R, pPeg);
         const pScaled = [pRot[0]*scalePegToObj, pRot[1]*scalePegToObj, pRot[2]*scalePegToObj];
@@ -381,7 +384,7 @@
         s = s.replace(cpRe, `${m[1]}${fmt(p[0])},${fmt(p[1])},${fmt(p[2])}${m[5]}`);
       }
       m = s.match(dirRe);
-      if (m){
+      if (m) {
         const dPeg = [parseFloat(m[2]), parseFloat(m[3]), parseFloat(m[4])];
         const dRot = normalize3(mulR3(R, dPeg));
         s = s.replace(dirRe, `${m[1]}${fmt(dRot[0])},${fmt(dRot[1])},${fmt(dRot[2])}${m[5]}`);
@@ -392,7 +395,7 @@
     return outLines.join("\n");
   }
 
-  function downloadBlob(blob, filename){
+  function downloadBlob(blob, filename) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
@@ -402,7 +405,7 @@
     URL.revokeObjectURL(a.href);
   }
 
-  function geometryTriangleCount(geom){
+  function geometryTriangleCount(geom) {
     if (!geom) return 0;
     const idx = geom.index;
     if (idx && idx.count) return Math.floor(idx.count / 3);
@@ -411,14 +414,14 @@
     return Math.floor(pos.count / 3);
   }
 
-  function writeGeometryAsBinaryStl(dv, offset, geom, m4){
+  function writeGeometryAsBinaryStl(dv, offset, geom, m4) {
     const posAttr = geom.getAttribute('position');
     if (!posAttr) return offset;
     const pos = posAttr.array;
     const idx = geom.index ? geom.index.array : null;
     const e = m4.elements;
 
-    function tx(i){
+    function tx(i) {
       const x = pos[i], y = pos[i+1], z = pos[i+2];
       return [
         e[0]*x + e[4]*y + e[8]*z + e[12],
@@ -428,7 +431,7 @@
     }
 
     const triCount = geometryTriangleCount(geom);
-    for (let t = 0; t < triCount; t++){
+    for (let t = 0; t < triCount; t++) {
       const i0 = idx ? idx[t*3+0]*3 : t*9+0;
       const i1 = idx ? idx[t*3+1]*3 : t*9+3;
       const i2 = idx ? idx[t*3+2]*3 : t*9+6;
@@ -465,7 +468,7 @@
     return offset;
   }
 
-  function buildBinaryStlBlob(instances){
+  function buildBinaryStlBlob(instances) {
     const objMeshes = objectMeshes;
     const pegCount = instances.length;
     const pegTris = geometryTriangleCount(pegGeometry);
@@ -489,13 +492,13 @@
 
     const shiftM4 = new THREE.Matrix4().makeTranslation(previewShift.x, previewShift.y, previewShift.z);
 
-    for (const m of objMeshes){
+    for (const m of objMeshes) {
       const m4 = shiftM4.clone().multiply(m.matrixWorld);
       offset = writeGeometryAsBinaryStl(dv, offset, m.geometry, m4);
     }
 
     const qManual = manualRotationQuaternion();
-    for (const inst of instances){
+    for (const inst of instances) {
       const face = inst.face;
       const nPlace = inst.nPlace;
       const qAuto = basePegQuaternion(face.u, nPlace);
@@ -511,7 +514,7 @@
     return new Blob([buf], { type: 'model/stl' });
   }
 
-  function initThree(){
+  function initThree() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera(45, 1, 0.2, 500000);
@@ -564,7 +567,7 @@
     renderer.domElement.addEventListener('pointerdown', onPick);
     renderer.domElement.addEventListener('pointermove', onMouseMove);
 
-    (function animate(){
+    (function animate() {
       requestAnimationFrame(animate);
       resizeRendererToDisplaySize();
       controls.update();
@@ -572,7 +575,7 @@
     })();
   }
 
-  function resizeRendererToDisplaySize(){
+  function resizeRendererToDisplaySize() {
     const w = host.clientWidth || 1;
     const h = host.clientHeight || 1;
     const pr = Math.min(window.devicePixelRatio || 1, 2);
@@ -584,8 +587,8 @@
     camera.updateProjectionMatrix();
   }
 
-  function clearScene(){
-    for (const m of objectMeshes){
+  function clearScene() {
+    for (const m of objectMeshes) {
       if (m.geometry) m.geometry.dispose();
       if (Array.isArray(m.material)) m.material.forEach(x => x.dispose && x.dispose());
       else m.material && m.material.dispose && m.material.dispose();
@@ -611,7 +614,7 @@
 	    updateExportUi();
   }
 
-  function clearPegGroup(){
+  function clearPegGroup() {
     while (pegGroup.children.length) {
       const c = pegGroup.children.pop();
       if (c.geometry && c.geometry.dispose) c.geometry.dispose();
@@ -619,7 +622,7 @@
     }
   }
 
-  function buildThreeMesh(geometryMesh){
+  function buildThreeMesh(geometryMesh) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(geometryMesh.attributes.position.array, 3));
     if (geometryMesh.attributes.normal) geometry.setAttribute("normal", new THREE.Float32BufferAttribute(geometryMesh.attributes.normal.array, 3));
@@ -668,18 +671,18 @@
     return mesh;
   }
 
-  function recenterPreviewGeometry(){
+  function recenterPreviewGeometry() {
     const box = new THREE.Box3().setFromObject(objectGroup);
     if (!isFinite(box.min.x)) return;
     const center = new THREE.Vector3();
     box.getCenter(center);
     previewShift.copy(center);
-    for (const mesh of objectMeshes){
+    for (const mesh of objectMeshes) {
       mesh.geometry.translate(-center.x, -center.y, -center.z);
     }
   }
 
-  function analyzePlanarFaces(meshObj, meshIdx){
+  function analyzePlanarFaces(meshObj, meshIdx) {
     const gm = meshObj.userData.geometryMesh;
     const bf = gm.brep_faces || [];
     const posAttr = meshObj.geometry.getAttribute('position');
@@ -689,14 +692,14 @@
     const TRI_COS_TOL = Math.cos(3 * Math.PI / 180);
     const DIST_TOL = 0.20;
 
-    for (let f = 0; f < bf.length; f++){
+    for (let f = 0; f < bf.length; f++) {
       const firstTri = bf[f].first;
       const lastTri  = bf[f].last;
       let nSum = new THREE.Vector3();
       let centroid = new THREE.Vector3();
       let vCount = 0;
 
-      for (let t = firstTri; t <= lastTri; t++){
+      for (let t = firstTri; t <= lastTri; t++) {
         const i0 = idx[t*3+0], i1 = idx[t*3+1], i2 = idx[t*3+2];
         const p0 = new THREE.Vector3(pos[i0*3+0], pos[i0*3+1], pos[i0*3+2]);
         const p1 = new THREE.Vector3(pos[i1*3+0], pos[i1*3+1], pos[i1*3+2]);
@@ -713,7 +716,7 @@
       n.normalize();
 
       let minDot = 1;
-      for (let t = firstTri; t <= lastTri; t++){
+      for (let t = firstTri; t <= lastTri; t++) {
         const i0 = idx[t*3+0], i1 = idx[t*3+1], i2 = idx[t*3+2];
         const p0 = new THREE.Vector3(pos[i0*3+0], pos[i0*3+1], pos[i0*3+2]);
         const p1 = new THREE.Vector3(pos[i1*3+0], pos[i1*3+1], pos[i1*3+2]);
@@ -725,9 +728,9 @@
       }
 
       let maxDist = 0;
-      for (let t = firstTri; t <= lastTri; t++){
+      for (let t = firstTri; t <= lastTri; t++) {
         const i0 = idx[t*3+0], i1 = idx[t*3+1], i2 = idx[t*3+2];
-        for (const ii of [i0,i1,i2]){
+        for (const ii of [i0,i1,i2]) {
           const p = new THREE.Vector3(pos[ii*3+0], pos[ii*3+1], pos[ii*3+2]);
           const d = Math.abs(n.dot(p.clone().sub(centroid)));
           if (d > maxDist) maxDist = d;
@@ -737,7 +740,7 @@
 
       let u = new THREE.Vector3(1,0,0);
       let proj = u.clone().sub(n.clone().multiplyScalar(u.dot(n)));
-      if (proj.lengthSq() < 1e-8){
+      if (proj.lengthSq() < 1e-8) {
         u.set(0,1,0);
         proj = u.clone().sub(n.clone().multiplyScalar(u.dot(n)));
       }
@@ -745,9 +748,9 @@
       const v = new THREE.Vector3().crossVectors(n, u).normalize();
 
       let minU=Infinity, maxU=-Infinity, minV=Infinity, maxV=-Infinity;
-      for (let t = firstTri; t <= lastTri; t++){
+      for (let t = firstTri; t <= lastTri; t++) {
         const i0 = idx[t*3+0], i1 = idx[t*3+1], i2 = idx[t*3+2];
-        for (const ii of [i0,i1,i2]){
+        for (const ii of [i0,i1,i2]) {
           const p = new THREE.Vector3(pos[ii*3+0], pos[ii*3+1], pos[ii*3+2]);
           const d = p.clone().sub(centroid);
           const uu = d.dot(u);
@@ -758,10 +761,10 @@
       }
       const faceId = meshIdx + ':' + f;
       faces.push({ faceId, meshObj, meshIdx, faceIndex: f, materialIndex: f + 1, planar, centroid, n, u, v, bounds: { minU, maxU, minV, maxV } });
-      if (planar){
+      if (planar) {
         planarFaceCount++;
         const mat = meshObj.userData.materials[f + 1];
-        if (mat){
+        if (mat) {
           mat.emissive = new THREE.Color(0x0d2230);
           mat.emissiveIntensity = 0.40;
         }
@@ -769,7 +772,7 @@
     }
   }
 
-  function faceFromIntersection(intersection){
+  function faceFromIntersection(intersection) {
     const meshObj = intersection.object;
     const gm = meshObj.userData.geometryMesh;
     if (!gm || !gm.brep_faces || !gm.brep_faces.length) return null;
@@ -777,7 +780,7 @@
     if (triIndex == null) return null;
     const f = gm.brep_faces;
     let lo=0, hi=f.length-1;
-    while (lo <= hi){
+    while (lo <= hi) {
       const mid = (lo+hi)>>1;
       const a = f[mid].first;
       const b = f[mid].last;
@@ -788,14 +791,14 @@
     return null;
   }
 
-  function getWorldHitNormal(hit){
+  function getWorldHitNormal(hit) {
     if (!hit.face || !hit.face.normal) return null;
     const n = hit.face.normal.clone();
     const nm = new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld);
     return n.applyMatrix3(nm).normalize();
   }
 
-  function onMouseMove(ev){
+  function onMouseMove(ev) {
     if (!isRemovalMode) return;
     const rect = renderer.domElement.getBoundingClientRect();
     const x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
@@ -826,7 +829,7 @@
     }
   }
 
-  function onPick(ev){
+  function onPick(ev) {
     const rect = renderer.domElement.getBoundingClientRect();
     const x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
     const y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
@@ -869,7 +872,7 @@
     let sign = 1;
     if (hitN) sign = (hitN.dot(rec.n) >= 0) ? 1 : -1;
 
-    if (selectedFaceIds.has(faceId)){
+    if (selectedFaceIds.has(faceId)) {
       selectedFaceIds.delete(faceId);
       selectedFaceSigns.delete(faceId);
       mat.color.copy(mat.userData.baseColor);
@@ -888,29 +891,29 @@
     updateBadges();
   }
 
-  function updateBadges(){
+  function updateBadges() {
     facesPill.textContent = planarFaceCount + ' planar / ' + selectedFaceIds.size + ' selected';
   }
 
-  function getExportFormat(){
+  function getExportFormat() {
     return exportFormatEl ? String(exportFormatEl.value || 'step') : 'step';
   }
 
-  function getActivePegCount(){
+  function getActivePegCount() {
     let c = 0;
-    for (const inst of currentInstances){
+    for (const inst of currentInstances) {
       if (inst && !inst.removed) c++;
     }
     return c;
   }
 
-  function updateDownloadLabel(){
+  function updateDownloadLabel() {
     if (!downloadBtn) return;
     const fmt = getExportFormat();
     downloadBtn.textContent = (fmt === 'stl') ? 'Download STL' : 'Download STEP';
   }
 
-  function updateDownloadEnabled(){
+  function updateDownloadEnabled() {
     if (!downloadBtn) return;
     const fmt = getExportFormat();
     const activeCount = getActivePegCount();
@@ -923,8 +926,8 @@
     downloadBtn.disabled = !ok;
   }
 
-  function updateExportUi(){
-    if (exportFormatEl){
+  function updateExportUi() {
+    if (exportFormatEl) {
       const hasObject = objectMeshes.length > 0;
       const stepAllowed = (!hasObject) || !!objectStepParts;
       const stepOpt = exportFormatEl.querySelector('option[value="step"]');
@@ -938,9 +941,9 @@
     updateDownloadEnabled();
   }
 
-  function buildPegGeometryFromStepResult(result){
+  function buildPegGeometryFromStepResult(result) {
     const geoms = [];
-    for (const m of result.meshes){
+    for (const m of result.meshes) {
       const g = new THREE.BufferGeometry();
       g.setAttribute("position", new THREE.Float32BufferAttribute(m.attributes.position.array, 3));
       if (m.attributes.normal) g.setAttribute("normal", new THREE.Float32BufferAttribute(m.attributes.normal.array, 3));
@@ -954,16 +957,16 @@
     return merged;
   }
 
-  function computePegBasisFromGeometry(geom){
+  function computePegBasisFromGeometry(geom) {
     geom.computeBoundingBox();
     const bb = geom.boundingBox;
     const ext = [ bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z ];
     const axes = [ new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,1) ];
     const pos = geom.getAttribute('position').array;
 
-    function axisStats(axis){
+    function axisStats(axis) {
       let minProj = Infinity, maxProj = -Infinity;
-      for (let i = 0; i < pos.length; i += 3){
+      for (let i = 0; i < pos.length; i += 3) {
         const d = pos[i]*axis.x + pos[i+1]*axis.y + pos[i+2]*axis.z;
         if (d < minProj) minProj = d;
         if (d > maxProj) maxProj = d;
@@ -971,7 +974,7 @@
       const span = Math.max(1e-6, maxProj - minProj);
       const eps = Math.min(1.0, span * 0.03);
       let nearMin = 0, nearMax = 0;
-      for (let i = 0; i < pos.length; i += 3){
+      for (let i = 0; i < pos.length; i += 3) {
         const d = pos[i]*axis.x + pos[i+1]*axis.y + pos[i+2]*axis.z;
         if (d <= minProj + eps) nearMin++;
         if (d >= maxProj - eps) nearMax++;
@@ -982,18 +985,18 @@
 
     let bestIdx = 0;
     let best = axisStats(axes[0]);
-    for (let i = 1; i < 3; i++){
+    for (let i = 1; i < 3; i++) {
       const st = axisStats(axes[i]);
       if (st.score > best.score) { best = st; bestIdx = i; }
     }
-    if (best.score < 1e-6){
+    if (best.score < 1e-6) {
       bestIdx = (ext[1] > ext[0]) ? 1 : 0;
       if (ext[2] > ext[bestIdx]) bestIdx = 2;
       best = axisStats(axes[bestIdx]);
     }
 
     let sideIdx = (bestIdx === 0) ? 1 : 0;
-    for (let i = 0; i < 3; i++){
+    for (let i = 0; i < 3; i++) {
       if (i === bestIdx) continue;
       if (ext[i] > ext[sideIdx]) sideIdx = i;
     }
@@ -1001,7 +1004,7 @@
     let height = axes[bestIdx].clone();
     let side = axes[sideIdx].clone();
 
-    if (best.nearMax > best.nearMin){
+    if (best.nearMax > best.nearMin) {
       height.multiplyScalar(-1);
       best = axisStats(height);
     }
@@ -1011,7 +1014,7 @@
     return { height, side, minAlongHeight: best.minProj };
   }
 
-  function basePegQuaternion(faceU, faceN){
+  function basePegQuaternion(faceU, faceN) {
     const height = pegBasis.height.clone().normalize();
     const side   = pegBasis.side.clone().normalize();
     const q1 = new THREE.Quaternion().setFromUnitVectors(height, faceN);
@@ -1026,7 +1029,7 @@
     return q2.multiply(q1);
   }
 
-  function manualRotationQuaternion(){
+  function manualRotationQuaternion() {
     const toRad = THREE.MathUtils.degToRad;
     const ex = toRad(pegEulerDeg.x + FIXED_X_DEG);
     const ey = toRad(pegEulerDeg.y + FIXED_Y_DEG);
@@ -1037,25 +1040,25 @@
     return qz.multiply(qy).multiply(qx);
   }
 
-  function computeMinAlongNormalLocal(geom, qWorld, normalWorld){
+  function computeMinAlongNormalLocal(geom, qWorld, normalWorld) {
     const inv = qWorld.clone().invert();
     const nLocal = normalWorld.clone().applyQuaternion(inv).normalize();
     const pos = geom.getAttribute('position').array;
     let min = Infinity;
-    for (let i = 0; i < pos.length; i += 3){
+    for (let i = 0; i < pos.length; i += 3) {
       const d = pos[i]*nLocal.x + pos[i+1]*nLocal.y + pos[i+2]*nLocal.z;
       if (d < min) min = d;
     }
     return min;
   }
 
-  function updatePegInstances(){
+  function updatePegInstances() {
     calculatePegPositions();
     renderPegs();
     renderGrid();
   }
 
-  function calculatePegPositions(){
+  function calculatePegPositions() {
     currentInstances = [];
     const selected = Array.from(selectedFaceIds)
       .map(id => faces.find(f => f.faceId === id))
@@ -1078,7 +1081,7 @@
     const pegCountY = Math.round(sy / PITCH_Y) + 1;
     dimsPill.textContent = pegCountX + ' × ' + pegCountY + ' pegs';
   
-    for (const face of selected){
+    for (const face of selected) {
       const sign = selectedFaceSigns.get(face.faceId) || 1;
       const nPlace = face.n.clone().multiplyScalar(sign);
 
@@ -1090,7 +1093,7 @@
       const maxV = face.bounds.maxV - padMm;
       if (minU > maxU || minV > maxV) continue;
   
-      for (const p of grid.positions){
+      for (const p of grid.positions) {
         if (currentInstances.length >= MAX_PEGS_TOTAL) break;
   
         const finalX = p.x + offsetX;
@@ -1124,7 +1127,7 @@
     const white = new THREE.Color(1,1,1);
     const highlight = new THREE.Color(0xaaeeff);
 
-    for (let i = 0; i < subset.length; i++){
+    for (let i = 0; i < subset.length; i++) {
       const item = subset[i];
       const actualIndex = indices[i];
       const face = item.face;
@@ -1153,7 +1156,7 @@
     return mesh;
   }
 
-  function renderPegs(){
+  function renderPegs() {
     clearPegGroup();
     
     const instances = currentInstances;
@@ -1164,7 +1167,7 @@
       return;
     }
 
-    if (!pegMaterial){
+    if (!pegMaterial) {
       pegMaterial = new THREE.MeshStandardMaterial({
         color: new THREE.Color(0x2d3440),
         roughness: 0.45,
@@ -1191,7 +1194,7 @@
     const removedIndices = [];
 
     let activeCount = 0;
-    for(let i=0; i<instances.length; i++){
+    for(let i=0; i<instances.length; i++) {
       if (!instances[i].removed) {
         activeSubset.push(instances[i]);
         activeIndices.push(i);
@@ -1215,7 +1218,7 @@
 	    updateDownloadEnabled();
   }
   
-  function renderGrid(){
+  function renderGrid() {
     while (gridGroup.children.length) {
       const c = gridGroup.children.pop();
       if (c.geometry) c.geometry.dispose();
@@ -1238,7 +1241,7 @@
   
     const eps = 0.26;
   
-    for (const fid of selectedFaceIds){
+    for (const fid of selectedFaceIds) {
       const face = faces.find(f => f.faceId === fid);
       if (!face) continue;
   
@@ -1258,7 +1261,7 @@
       const map = new Map();
       const nodes = [];
   
-      for (const p of gridInfo.positions){
+      for (const p of gridInfo.positions) {
         const x = p.x + offsetX;
         const y = p.y + offsetY;
   
@@ -1290,7 +1293,7 @@
       const segPts = [];
       const pushSeg = (a, b) => { segPts.push(a, b); };
   
-      for (let idx = 0; idx < nodes.length; idx++){
+      for (let idx = 0; idx < nodes.length; idx++) {
         const { r, i, key } = nodes[idx];
         const p0 = map.get(key);
         if (!p0) continue;
@@ -1328,7 +1331,7 @@
   
   
   
-  function doAutoLayout(face){
+  function doAutoLayout(face) {
     if (!face) {
       if (selectedFaceIds.size === 0) return;
       const lastId = Array.from(selectedFaceIds).pop();
@@ -1346,7 +1349,7 @@
       Math.abs(padMm - 5) < 0.25 &&
       ((face.bounds.minU + padMm) > (face.bounds.maxU - padMm) ||
        (face.bounds.minV + padMm) > (face.bounds.maxV - padMm))
-    ){
+    ) {
       padMm = 0;
     }
   
@@ -1371,7 +1374,7 @@
   
   autoLayoutBtn.addEventListener('click', () => doAutoLayout(null));
 
-  function fitView(){
+  function fitView() {
     const box = new THREE.Box3().setFromObject(objectGroup);
     if (!isFinite(box.min.x)) return;
     const sphere = new THREE.Sphere();
@@ -1389,14 +1392,14 @@
     controls.update();
   }
 
-  async function loadOcct(){
+  async function loadOcct() {
     if (occt) return occt;
     showLoading('Initializing STEP importer…', 'Loading WebAssembly…');
     occt = await occtimportjs();
     return occt;
   }
 
-  async function loadPegStepFromText(txt, pegLabel){
+  async function loadPegStepFromText(txt, pegLabel) {
     const oc = await loadOcct();
     pegStepText = txt;
     pegStepParts = splitStep(pegStepText);
@@ -1421,29 +1424,29 @@
 	    updateExportUi();
   }
 
-  function normalizePegType(v){
+  function normalizePegType(v) {
     const s = String(v || '').trim().toLowerCase();
     if (s === 'snug') return 'snug';
     if (s === 'loose') return 'loose';
     return 'normal';
   }
 
-  function titlePeg(type){
+  function titlePeg(type) {
     const t = normalizePegType(type);
     return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
-  function setPegUi(type){
+  function setPegUi(type) {
     const t = normalizePegType(type);
     currentPegType = t;
-    for (const b of pegOptionBtns){
+    for (const b of pegOptionBtns) {
       const isSel = (b.dataset.peg === t);
       b.classList.toggle('selected', isSel);
       b.setAttribute('aria-pressed', isSel ? 'true' : 'false');
     }
   }
 
-  async function loadPegMaster(type){
+  async function loadPegMaster(type) {
     const t = normalizePegType(type);
     const file = HOOK_FILES[t] || HOOK_FILES.normal;
     showLoading('Loading ' + file + '…', 'Peg master model');
@@ -1456,25 +1459,28 @@
     await loadPegStepFromText(txt, titlePeg(t));
   }
 
-  async function setPegType(type){
+  async function setPegType(type) {
     const next = normalizePegType(type);
     if (next === currentPegType) return;
     const prev = currentPegType;
     setPegUi(next);
-    try{
+    try {
       await loadPegMaster(next);
       hoveredInstanceId = -1;
       hoveredIsRemoved = false;
       renderPegs();
-    }catch(e){
+    } catch(e) {
       setPegUi(prev);
       showError(e);
     }
   }
 
-  async function loadObjectStep(file){
+  async function loadObjectStep(file) {
+    objectFileName = file.name;
     const oc = await loadOcct();
+
     showLoading('Reading object STEP…', file.name);
+
     const [bin, txt] = await Promise.all([
       (new Promise((resolve, reject) => {
         const r = new FileReader();
@@ -1501,7 +1507,7 @@
     if (!result || !result.success) throw new Error('Failed to import object STEP.');
     clearScene();
     showLoading('Building preview…', 'Creating meshes…');
-    for (const m of result.meshes){
+    for (const m of result.meshes) {
       const meshObj = buildThreeMesh(m);
       objectMeshes.push(meshObj);
       objectGroup.add(meshObj);
@@ -1509,7 +1515,7 @@
     recenterPreviewGeometry();
     planarFaceCount = 0;
     faces = [];
-    for (let i = 0; i < objectMeshes.length; i++){
+    for (let i = 0; i < objectMeshes.length; i++) {
       analyzePlanarFaces(objectMeshes[i], i);
     }
     selectedFaceIds.clear();
@@ -1525,7 +1531,7 @@
 	    updateExportUi();
   }
 
-  function stlLooksBinary(arrayBuffer){
+  function stlLooksBinary(arrayBuffer) {
     if (!arrayBuffer || arrayBuffer.byteLength < 84) return false;
     const dv = new DataView(arrayBuffer);
     const triCount = dv.getUint32(80, true);
@@ -1534,18 +1540,18 @@
     return false;
   }
 
-  function parseStlToTriangles(arrayBuffer){
+  function parseStlToTriangles(arrayBuffer) {
     if (stlLooksBinary(arrayBuffer)) {
       const dv = new DataView(arrayBuffer);
       const triCount = dv.getUint32(80, true);
       const positions = new Float32Array(triCount * 9);
       const normals = new Float32Array(triCount * 9);
       let off = 84;
-      for (let t = 0; t < triCount; t++){
+      for (let t = 0; t < triCount; t++) {
         const nx = dv.getFloat32(off, true); off += 4;
         const ny = dv.getFloat32(off, true); off += 4;
         const nz = dv.getFloat32(off, true); off += 4;
-        for (let v = 0; v < 3; v++){
+        for (let v = 0; v < 3; v++) {
           const px = dv.getFloat32(off, true); off += 4;
           const py = dv.getFloat32(off, true); off += 4;
           const pz = dv.getFloat32(off, true); off += 4;
@@ -1567,7 +1573,7 @@
     const normals = [];
     const reFacet = /facet\s+normal\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)[\s\S]*?outer\s+loop[\s\S]*?vertex\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)[\s\S]*?vertex\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)[\s\S]*?vertex\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)[\s\S]*?endloop[\s\S]*?endfacet/g;
     let m;
-    while ((m = reFacet.exec(txt)) !== null){
+    while ((m = reFacet.exec(txt)) !== null) {
       const nx = parseFloat(m[1]), ny = parseFloat(m[2]), nz = parseFloat(m[3]);
       const v = [
         parseFloat(m[4]), parseFloat(m[5]), parseFloat(m[6]),
@@ -1581,7 +1587,7 @@
     return { positions: new Float32Array(positions), normals: new Float32Array(normals), triCount };
   }
 
-  function canonicalizeNormal(nx, ny, nz){
+  function canonicalizeNormal(nx, ny, nz) {
     const ax = Math.abs(nx), ay = Math.abs(ny), az = Math.abs(nz);
     if (ax >= ay && ax >= az) {
       if (nx < 0) { nx = -nx; ny = -ny; nz = -nz; }
@@ -1593,7 +1599,7 @@
     return [nx, ny, nz];
   }
 
-  function buildGeometryMeshFromStlTriangles(positions, normals){
+  function buildGeometryMeshFromStlTriangles(positions, normals) {
     const triCount = Math.floor(positions.length / 9);
     if (!triCount) throw new Error('STL has no triangles.');
 
@@ -1603,7 +1609,7 @@
     const areas = new Float64Array(triCount);
     let totalArea = 0;
 
-    for (let t = 0; t < triCount; t++){
+    for (let t = 0; t < triCount; t++) {
       const b = t * 9;
       const x0 = positions[b+0], y0 = positions[b+1], z0 = positions[b+2];
       const x1 = positions[b+3], y1 = positions[b+4], z1 = positions[b+5];
@@ -1635,7 +1641,7 @@
       const key = nxq + ',' + nyq + ',' + nzq + ':' + dq;
 
       let g = groups.get(key);
-      if (!g){
+      if (!g) {
         g = { tris: [], area: 0 };
         groups.set(key, g);
       }
@@ -1647,13 +1653,13 @@
     const minArea = Math.max(25, totalArea * 0.001);
     const MAX_FACES = 250;
     const keptGroups = [];
-    for (const g of list){
+    for (const g of list) {
       if (keptGroups.length >= MAX_FACES) break;
       if (g.area >= minArea && g.tris.length >= 8) keptGroups.push(g);
     }
 
     const keptMask = new Uint8Array(triCount);
-    for (const g of keptGroups){
+    for (const g of keptGroups) {
       for (const t of g.tris) keptMask[t] = 1;
     }
 
@@ -1664,10 +1670,10 @@
     const brep_faces = [];
 
     let triWrite = 0;
-    for (let gi = 0; gi < keptGroups.length; gi++){
+    for (let gi = 0; gi < keptGroups.length; gi++) {
       const g = keptGroups[gi];
       const first = triWrite;
-      for (const t of g.tris){
+      for (const t of g.tris) {
         const src = t * 9;
         const dst = triWrite * 9;
         outPos.set(positions.subarray(src, src + 9), dst);
@@ -1678,7 +1684,7 @@
       if (last >= first) brep_faces.push({ first, last, color: [0.01, 0.35, 0.67] });
     }
 
-    for (let t = 0; t < triCount; t++){
+    for (let t = 0; t < triCount; t++) {
       if (keptMask[t]) continue;
       const src = t * 9;
       const dst = triWrite * 9;
@@ -1699,7 +1705,8 @@
     };
   }
 
-  async function loadObjectStl(file){
+  async function loadObjectStl(file) {
+    objectFileName = file.name;
     showLoading('Reading object STL…', file.name);
     const buf = await readFileAsArrayBuffer(file, (e) => {
       if (e.lengthComputable) overlaySub.textContent = file.name + ' — ' + Math.round((e.loaded / e.total)*100) + '%';
@@ -1738,7 +1745,7 @@
     updateExportUi();
   }
 
-  function updateDropHint(){
+  function updateDropHint() {
     dropHint.style.display = objectMeshes.length ? 'none' : 'flex';
   }
 
@@ -1752,7 +1759,7 @@
     }
   }
 
-  function tryLoadFromFileList(fileList){
+  function tryLoadFromFileList(fileList) {
     if (!fileList || !fileList.length) return;
     const file = fileList[0];
     const name = (file.name || '').toLowerCase();
@@ -1772,7 +1779,7 @@
     });
   }
 
-  function preventDefaults(e){ e.preventDefault(); e.stopPropagation(); }
+  function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
   ['dragenter','dragover','dragleave','drop'].forEach(evt => {
     previewEl.addEventListener(evt, preventDefaults, false);
   });
@@ -1792,7 +1799,7 @@
   previewEl.addEventListener('drop', (e) => {
     dropHint.classList.remove('dragover');
     const dt = e.dataTransfer;
-    if (dt && dt.files && dt.files.length){
+    if (dt && dt.files && dt.files.length) {
       tryLoadFromFileList(dt.files);
     } else {
       updateDropHint();
@@ -1810,24 +1817,27 @@
     objectFileEl.click();
   });
 
-  function clampDeg(v){
+  function clampDeg(v) {
     v = Number(v);
     if (!isFinite(v)) v = 0;
     if (v > 180) v = 180;
     if (v < -180) v = -180;
     return v;
   }
-  function syncOriUI(){
+
+  function syncOriUI() {
     xRange.value = String(pegEulerDeg.x); xNum.value = String(pegEulerDeg.x);
     yRange.value = String(pegEulerDeg.y); yNum.value = String(pegEulerDeg.y);
     zRange.value = String(pegEulerDeg.z); zNum.value = String(pegEulerDeg.z);
   }
-  function setAxis(axis, val){
+
+  function setAxis(axis, val) {
     pegEulerDeg[axis] = clampDeg(val);
     syncOriUI();
     updatePegInstances();
   }
-  function bumpAxis(axis, delta){
+
+  function bumpAxis(axis, delta) {
     setAxis(axis, pegEulerDeg[axis] + delta);
   }
 
@@ -1923,7 +1933,7 @@
     lastUnit = nextUnit;
   });
 
-  for (const b of pegOptionBtns){
+  for (const b of pegOptionBtns) {
     b.addEventListener('click', () => setPegType(b.dataset.peg));
   }
 
@@ -1944,11 +1954,13 @@
 
   toggleRemovalBtn.addEventListener('click', () => {
     isRemovalMode = !isRemovalMode;
+
     if (isRemovalMode) {
       toggleRemovalBtn.classList.add('active');
       toggleRemovalBtn.innerText = "Exit Removal Mode";
       previewEl.classList.add('removal-mode');
       removalTag.style.display = 'block';
+
     } else {
       toggleRemovalBtn.classList.remove('active');
       toggleRemovalBtn.innerText = "Peg removal";
@@ -1956,6 +1968,7 @@
       removalTag.style.display = 'none';
       hoveredInstanceId = -1;
     }
+
     renderPegs();
   });
 
@@ -1965,15 +1978,16 @@
   });
 
   clearFacesBtn.addEventListener('click', () => {
-    for (const id of selectedFaceIds){
+    for (const id of selectedFaceIds) {
       const rec = faces.find(f => f.faceId === id);
       if (!rec) continue;
       const mat = rec.meshObj.userData.materials[rec.materialIndex];
-      if (mat){
+      if (mat) {
         mat.color.copy(mat.userData.baseColor);
         mat.emissiveIntensity = 0.40;
       }
     }
+
     selectedFaceIds.clear();
     selectedFaceSigns.clear();
     updatePegInstances();
@@ -1982,7 +1996,7 @@
 
   fitViewBtn.addEventListener('click', fitView);
 
-  if (exportFormatEl){
+  if (exportFormatEl) {
     exportFormatEl.addEventListener('change', () => {
       updateDownloadLabel();
       updateDownloadEnabled();
@@ -1991,14 +2005,17 @@
 
   objectFileEl.addEventListener('change', async () => {
     const f = objectFileEl.files && objectFileEl.files[0];
+
     if (!f) return;
     updateFileInputLabel(f);
-    try{
+
+    try {
       statusEl.textContent = 'Loading object…';
       const name = String(f.name || '').toLowerCase();
       if (name.endsWith('.stl')) await loadObjectStl(f);
       else await loadObjectStep(f);
-    }catch(e){
+
+    } catch(e) {
       hideLoading();
       statusEl.textContent = 'Error.';
       showError(e);
@@ -2006,15 +2023,22 @@
   });
 
   downloadBtn.addEventListener('click', () => {
-    try{
+    try {
       const instances = currentInstances.filter(i => !i.removed);
       if (!instances.length) throw new Error('No pegs to export.');
 
+      const baseName = objectFileName
+        ? objectFileName.replace(/\.[^.]+$/, '')
+        : 'object';
+
       const fmt = getExportFormat();
+
       if (fmt === 'stl') {
         if (!objectMeshes.length || !pegGeometry) throw new Error('Nothing to export as STL.');
+
         const blob = buildBinaryStlBlob(instances);
-        downloadBlob(blob, 'object_with_skadis_pegs_' + instances.length + '.stl');
+        downloadBlob(blob, baseName + '_with_skadis_pegs_' + instances.length + '.stl');
+
         return;
       }
 
@@ -2030,7 +2054,8 @@
 
       const qManual = manualRotationQuaternion();
       const blocks = [];
-      for (let i = 0; i < instances.length; i++){
+
+      for (let i = 0; i < instances.length; i++) {
         const face = instances[i].face;
         const baseMm = instances[i].base.clone().add(previewShift);
         const nPlace = instances[i].nPlace;
@@ -2048,22 +2073,28 @@
           [e[2], e[6], e[10]],
         ];
         const idOffset = baseOffset + i * stride;
+
         blocks.push(transformPegDataBlock(pegStepParts.data, R, tObj, scalePegToObj, idOffset));
       }
+
       const merged = objHeader + "\n" + objData + "\n" + blocks.join("\n") + "\n" + objFooter;
       const blob = new Blob([merged], { type: 'model/step' });
-      downloadBlob(blob, 'object_with_skadis_pegs_' + instances.length + '.step');
-    }catch(e){
+
+      downloadBlob(blob, baseName + '_with_skadis_pegs_' + instances.length + '.step');
+    } catch(e) {
       alert(e.message || String(e));
     }
   });
 
-  function applyUrlState(){
+  function applyUrlState() {
     const initialPadMm = getPaddingMm('mm');
     const params = new URLSearchParams(window.location.search);
+
     if (params.has('unit')) unitSelect.value = params.get('unit');
+
     updateLimits();
     setPaddingUiFromMm(initialPadMm);
+
     if (params.has('h')) { hNum.value = params.get('h'); hRange.value = params.get('h'); }
     if (params.has('v')) { vNum.value = params.get('v'); vRange.value = params.get('v'); }
     if (params.has('offset') && row0OffsetEl) row0OffsetEl.value = params.get('offset');
@@ -2073,16 +2104,18 @@
     lastUnit = unitSelect.value;
   }
 
-  try{
+  try {
     initThree();
     applyUrlState();
     syncOriUI();
     updateBadges();
     updateDropHint();
-	    updateExportUi();
-	    statusEl.textContent = 'Ready. Drop a STEP or STL onto the preview, or use file input.';
+	  updateExportUi();
+
+	  statusEl.textContent = 'Ready. Drop a STEP or STL onto the preview, or use file input.';
     loadPegMaster(currentPegType).catch(showError);
-  }catch(e){
+    
+  } catch(e) {
     showError(e);
   }
 })();
