@@ -13,14 +13,8 @@ Here is an example of how Målområde grid looks like, so you are sure the resul
 
 X = Hole
 
-  <--40mm--->
-X            X
-^         
-|		<--40mm--->  
-42.5mm  X          X
-|	      
-v          		  
-X            X
+<img width="252" height="211" alt="image" src="https://github.com/user-attachments/assets/2f276164-5031-4e9f-83d0-bd1d4be59d99" />
+
 
 Distance between each hole in the same row = 40mm
 Distance between row 1 and row 2 = 21.5mm
