@@ -8,9 +8,9 @@
   const FIXED_Y_DEG = 0;
   const FIXED_Z_DEG = 0;
   const EMBED_MM = 0.20;
-  const PITCH_X = 40.0;
-  const PITCH_Y = 20.0;
-  const HALF_X  = 20.0;
+  var PITCH_X = document.getElementById('pitchxNum').value;
+  var PITCH_Y = document.getElementById('pitchyNum').value;
+  var HALF_X  = document.getElementById('halfxNum').value;
   const MAX_PEGS_TOTAL = 8000;
 
   const statusEl = document.getElementById('status');
@@ -830,6 +830,9 @@
   }
 
   function onPick(ev) {
+    PITCH_X = document.getElementById('pitchxNum').value;
+    PITCH_Y = document.getElementById('pitchyNum').value;
+    HALF_X  = document.getElementById('halfxNum').value;
     const rect = renderer.domElement.getBoundingClientRect();
     const x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
     const y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);

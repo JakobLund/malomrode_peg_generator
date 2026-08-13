@@ -1,0 +1,1 @@
+run inside folder in cmd: python -m http.server 8000
